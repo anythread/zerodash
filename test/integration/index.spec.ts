@@ -1,6 +1,6 @@
 import { keccak256Hash } from '../../src/utils'
 import { Wallet } from 'ethers'
-import { ZeroUnderscore } from '../../src'
+import { ZeroUnderscore } from '../../'
 import { beeUrl, getPostageBatchId } from '../utils'
 import { bytesToHex } from '../../src/utils'
 import { Reference } from '@ethersphere/bee-js'
