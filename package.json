@@ -16,7 +16,7 @@
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose --selectProjects=node:integration --config=jest.config.ts"
   },
   "keywords": [
-    "0_...",
+    "0_",
     "swarm",
     "ethereum",
     "web3",

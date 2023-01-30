@@ -1,4 +1,4 @@
-# 0_...
+# 0_
 
 This library facilitates to use [Graffiti Feeds](https://github.com/fairDataSociety/FIPs/blob/master/text/0062-graffiti-feed.md) on [Ethereum Swarm](https://www.ethswarm.org/).
 
@@ -7,7 +7,7 @@ This library facilitates to use [Graffiti Feeds](https://github.com/fairDataSoci
 # Install
 
 ```sh
-npm install 0_... --save
+npm install 0_ --save
 ```
 
 # Compilation
