@@ -74,6 +74,6 @@ function isAnyThreadComment(value: unknown): value is AnyThreadComment {
 
 export function assertAnyThreadComment(value: unknown): asserts value is AnyThreadComment {
   if (!isAnyThreadComment(value)) {
-    throw new Error('The given value is not a valid user comment')
+    throw new Error('The given value is not a valid personal storage record')
   }
 }
