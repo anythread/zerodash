@@ -44,6 +44,11 @@ interface ConstructorOptions<T = AnyThreadComment> {
    */
   personalStorageSigner?: Signer
   /**
+   * Swarm Postage Batch ID which is only required when write happens
+   * Default: 000000000000000000000000000000000000000000000
+   */
+  postageBatchId?: string
+  /**
    * API Url of the Ethereum Swarm Bee client
    * Default: http://localhost:1633
    */
@@ -69,12 +74,11 @@ interface ReadReturn<T> {
   iter: AsyncGenerator<ReadPersonalStorageReturn<T>>
 }
 
-interface WriteOptions extends ReadOptions {
-  postageBatchId?: string
-}
+type WriteOptions = ReadOptions
 
-export class ZeroUnderscore<UserPayload = AnyThreadComment> {
+export class ZeroDash<UserPayload = AnyThreadComment> {
   public fifo: boolean
+  public postageBatchId: string
   private bee: Bee
   private personalStorageSigner: Signer
   /** Graffiti Feed Topic */
@@ -82,6 +86,7 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
   private assertPersonalStorageRecord: (unknown: unknown) => asserts unknown is UserPayload
 
   constructor(beeApiUrl: string, options?: ConstructorOptions<UserPayload>) {
+    this.postageBatchId = options?.postageBatchId ?? DEFAULT_POSTAGE_BATCH_ID
     this.consensusHash = keccak256Hash(options?.consensus?.id ?? DEFAULT_CONSENSUS_ID)
     this.fifo = options?.fifo ?? false
     this.bee = new Bee(beeApiUrl)
@@ -102,6 +107,7 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
     const graffitiWallet = getGraffitiWallet(graffitiSigner)
     const graffitiReader = this.bee.makeFeedReader('sequence', this.consensusHash, graffitiWallet.address)
     const personalStorageTopic = keccak256Hash(graffitiSigner, this.consensusHash)
+    const checkedIaasIdentifiers: Record<EthAddress, boolean> = {}
 
     if (this.fifo) {
       // start from the beginning and do it until there is no more
@@ -113,6 +119,12 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
           const record = await graffitiReader.download({ index: numberToFeedIndex(i++) })
           try {
             const { iaasIdentifier } = await this.readGraffitiFeedRecord(record.reference)
+
+            // if the `iaasIdentifier` was already once in the stream then it neglects that.
+            if (checkedIaasIdentifiers[iaasIdentifier]) {
+              continue
+            }
+            checkedIaasIdentifiers[iaasIdentifier] = true
 
             yield {
               iaasIdentifier,
@@ -136,6 +148,12 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
           try {
             const record = await graffitiReader.download({ index: numberToFeedIndex(i) })
             const { iaasIdentifier } = await this.readGraffitiFeedRecord(record.reference)
+
+            // if the `iaasIdentifier` was already once in the stream then it neglects that.
+            if (checkedIaasIdentifiers[iaasIdentifier]) {
+              continue
+            }
+            checkedIaasIdentifiers[iaasIdentifier] = true
 
             yield {
               iaasIdentifier,
@@ -231,10 +249,6 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
   async write(data: UserPayload, options?: WriteOptions) {
     this.assertPersonalStorageRecord(data)
     const resourceId = options?.resourceId ?? DEFAULT_RESOURCE_ID
-    let postageBatchId = DEFAULT_POSTAGE_BATCH_ID
-    if (options?.postageBatchId) {
-      postageBatchId = options.postageBatchId
-    }
     const graffitiSigner = getConsensualPrivateKey(resourceId)
     const graffitiWriter = this.bee.makeFeedWriter('sequence', this.consensusHash, graffitiSigner)
     const personalStorageTopic = keccak256Hash(graffitiSigner, this.consensusHash)
@@ -249,17 +263,17 @@ export class ZeroUnderscore<UserPayload = AnyThreadComment> {
 
     // write graffiti feed
     const { reference: gfrReference } = await this.bee.uploadData(
-      postageBatchId,
+      this.postageBatchId,
       serializeGraffitiRecord(graffitiRecord),
     )
-    await graffitiWriter.upload(postageBatchId, gfrReference)
+    await graffitiWriter.upload(this.postageBatchId, gfrReference)
 
     // write personal storage
     const { reference: psReference } = await this.bee.uploadData(
-      postageBatchId,
+      this.postageBatchId,
       this.serializeUserPayload(data),
     )
-    await personalStorageWriter.upload(postageBatchId, psReference)
+    await personalStorageWriter.upload(this.postageBatchId, psReference)
   }
 
   private serializeUserPayload(userPayload: UserPayload): Uint8Array {
