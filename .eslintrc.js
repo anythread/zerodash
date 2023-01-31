@@ -40,7 +40,7 @@ module.exports = {
     'quote-props': ['error', 'as-needed'],
     'require-yield': 'error',
     'max-nested-callbacks': ['error', 4],
-    'max-depth': ['error', 4],
+    'max-depth': ['error', 5],
     'space-before-function-paren': [
       'error',
       {
