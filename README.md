@@ -42,6 +42,7 @@ With that, the rules have been created for a specific Graffit Feed.
 For write operations, the `personalStorageSigner` and the `postageBatchId` must be set.
 
 ```ts
+import { ZeroDash } from '0_'
 import { Wallet } from 'ethers'
 
 const personalStorageWallet = Wallet.createRandom()
