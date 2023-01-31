@@ -14,3 +14,16 @@ export function getPostageBatchId(): string {
 export async function sleep(ms = 1000): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
+
+export function getRandomString(length = 16): string {
+  let result = ''
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const charactersLength = characters.length
+  let counter = 0
+  while (counter < length) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength))
+    counter += 1
+  }
+
+  return result
+}

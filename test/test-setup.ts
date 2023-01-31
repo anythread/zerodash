@@ -12,9 +12,10 @@ export default async function testsSetup(): Promise<void> {
       const beeDebugUrl = process.env.BEE_DEBUG_API_URL || 'http://localhost:1635'
       const beeDebug = new BeeDebug(beeDebugUrl)
       try {
-        process.env.BEE_POSTAGE = await beeDebug.createPostageBatch('100', 20)
+        process.env.BEE_POSTAGE = await beeDebug.createPostageBatch('100000', 20)
       } catch (e) {
-        process.env.BEE_POSTAGE = (await beeDebug.getAllPostageBatch()).filter(e => e.usable)[0].batchID
+        await sleep(2000)
+        process.env.BEE_POSTAGE = (await beeDebug.getAllPostageBatch())[0].batchID
       }
       console.log('BEE_POSTAGE: ', process.env.BEE_POSTAGE)
       //wait for chunk to be usable
