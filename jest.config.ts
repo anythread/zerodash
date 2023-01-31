@@ -43,7 +43,7 @@ export default async (): Promise<Config.InitialOptions> => {
         displayName: 'node:integration',
         testEnvironment: 'node',
         testRegex: 'test/integration/((?!\\.browser).)*\\.spec\\.ts',
-        // globalSetup: '<rootDir>/test/test-setup.ts',
+        globalSetup: '<rootDir>/test/test-setup.ts',
       },
     ] as unknown[] as string[], // bad types
   }
