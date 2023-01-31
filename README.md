@@ -1,4 +1,4 @@
-# 0_
+# Zero Dash
 
 This library facilitates to use [Graffiti Feeds](https://github.com/fairDataSociety/FIPs/blob/master/text/0062-graffiti-feed.md) on [Ethereum Swarm](https://www.ethswarm.org/).
 
@@ -7,7 +7,7 @@ This library facilitates to use [Graffiti Feeds](https://github.com/fairDataSoci
 # Install
 
 ```sh
-npm install 0_ --save
+npm install zerodash --save
 ```
 
 # Usage
@@ -42,7 +42,7 @@ With that, the rules have been created for a specific Graffit Feed.
 For write operations, the `personalStorageSigner` and the `postageBatchId` must be set.
 
 ```ts
-import { ZeroDash } from '0_'
+import { ZeroDash } from 'zerodash'
 import { Wallet } from 'ethers'
 
 const personalStorageWallet = Wallet.createRandom()

@@ -1,5 +1,5 @@
 {
-  "name": "0_",
+  "name": "zerodash",
   "version": "0.1.0",
   "description": "Library for utilizing Graffiti Feed with Personal Storage - FIP 62",
   "main": "dist/index.js",
@@ -17,6 +17,7 @@
   },
   "keywords": [
     "0_",
+    "zerodash",
     "swarm",
     "ethereum",
     "web3",
