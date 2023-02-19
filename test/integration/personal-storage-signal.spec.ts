@@ -1,6 +1,6 @@
 import { keccak256Hash } from '../../src/utils'
 import { Wallet } from 'ethers'
-import { ZeroDash } from '../../src'
+import { PersonalStorageSignal } from '../../src'
 import { beeUrl, getPostageBatchId, getRandomString } from '../utils'
 import { bytesToHex } from '../../src/utils'
 import { Reference } from '@ethersphere/bee-js'
@@ -10,16 +10,20 @@ const postageBatchId = getPostageBatchId()
 const text = 'Csak a puffin ad neked erőt és mindent lebíró akaratot' // for testing
 const contentHash = bytesToHex(keccak256Hash('smth')) as Reference
 
-function getPersonalStorageWallet(): { personalStorageWallet: Wallet; zero_: ZeroDash; zero_any: ZeroDash } {
+function getPersonalStorageWallet(): {
+  personalStorageWallet: Wallet
+  zero_: PersonalStorageSignal
+  zero_any: PersonalStorageSignal
+} {
   const personalStorageWallet = Wallet.createRandom()
-  const zero_ = new ZeroDash(beeUrl(), {
+  const zero_ = new PersonalStorageSignal(beeUrl(), {
     personalStorageSigner: personalStorageWallet.privateKey.slice(2),
     postageBatchId,
   })
 
-  const zero_any = new ZeroDash(beeUrl(), {
+  const zero_any = new PersonalStorageSignal(beeUrl(), {
     personalStorageSigner: personalStorageWallet.privateKey.slice(2),
-    consensus: { id: 'AnyThread:v1', assertPersonalStorageRecord: () => true },
+    consensus: { id: 'AnyThread:v1', assertRecord: () => true },
     postageBatchId,
   })
 
