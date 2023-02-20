@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/anythread/zerodash/compare/v0.1.0...v0.2.0) (2023-02-20)
+
+
+### Features
+
+* information signal ([#2](https://github.com/anythread/zerodash/issues/2)) ([90a1628](https://github.com/anythread/zerodash/commit/90a162881798c0ed420236bb183be1b55be74116))
+
 ## 0.1.0 (2023-01-31)
 
 
