@@ -1,5 +1,5 @@
 import { InformationSignal } from '../../src'
-import { beeUrl, getPostageBatchId, getRandomString } from '../utils'
+import { beeUrl, getPostageBatchId, getTestResourceId } from '../utils'
 
 const postageBatchId = getPostageBatchId()
 const dappId = 'information-signal-test:v1'
@@ -42,10 +42,6 @@ function getSignalInstances(): {
   }
 }
 
-function getTestResourceId(sequenceId: number): string {
-  return `${sequenceId}-${getRandomString()}`
-}
-
 describe('integration tests', () => {
   it('should write/read some data into the default GF', async () => {
     const { zero_ } = getSignalInstances()
@@ -56,5 +52,58 @@ describe('integration tests', () => {
     const record = (await zero_.read({ resourceId }).next()).value.record
 
     expect(record).toStrictEqual(text)
+  })
+
+  it('should read on empty graffiti feed', async () => {
+    const { zero_ } = getSignalInstances()
+    const resourceId = getTestResourceId(2)
+
+    const iaasIterator = (await zero_.read({ resourceId }).next()).value
+    expect(iaasIterator).toBeUndefined()
+  })
+
+  it('should write multiple records in graffiti feed', async () => {
+    const { zero_ } = getSignalInstances()
+    const resourceId = getTestResourceId(3)
+    const message1 = text + '1'
+    const message2 = text + '2'
+    const message3 = text + '3'
+
+    await zero_.write(message1, { resourceId })
+    await zero_.write(message2, { resourceId })
+    await zero_.write(message3, { resourceId })
+
+    const graffitiIterator = zero_.read({ resourceId })
+    const personalStorageRecord3 = (await graffitiIterator.next()).value.record
+    const personalStorageRecord2 = (await graffitiIterator.next()).value.record
+    const personalStorageRecord1 = (await graffitiIterator.next()).value.record
+
+    expect(personalStorageRecord1).toStrictEqual(message1)
+    expect(personalStorageRecord2).toStrictEqual(message2)
+    expect(personalStorageRecord3).toStrictEqual(message3)
+
+    const noRecord = (await graffitiIterator.next()).value
+    expect(noRecord).toBeUndefined()
+  })
+
+  it('should skip a wrong record in Graffiti Feed', async () => {
+    const { zero_, zero_any } = getSignalInstances()
+    const resourceId = getTestResourceId(4)
+    const message1 = text + '1'
+    const message2 = 420
+    const message3 = text + '3'
+
+    await zero_.write(message1, { resourceId })
+    await zero_any.write(message2 as unknown as TestRecord, { resourceId })
+    await zero_.write(message3, { resourceId })
+
+    const graffitiIterator = zero_.read({ resourceId })
+    const personalStorageRecord3 = (await graffitiIterator.next()).value.record
+    const personalStorageRecord2 = (await graffitiIterator.next()).value.record
+    const personalStorageRecord1 = (await graffitiIterator.next()).value
+
+    expect(personalStorageRecord3).toStrictEqual(message3)
+    expect(personalStorageRecord2).toStrictEqual(message1)
+    expect(personalStorageRecord1).toBeUndefined()
   })
 })

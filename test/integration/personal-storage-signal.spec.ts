@@ -1,7 +1,7 @@
 import { keccak256Hash } from '../../src/utils'
 import { Wallet } from 'ethers'
 import { PersonalStorageSignal } from '../../src'
-import { beeUrl, getPostageBatchId, getRandomString } from '../utils'
+import { beeUrl, getPostageBatchId, getTestResourceId } from '../utils'
 import { bytesToHex } from '../../src/utils'
 import { Reference } from '@ethersphere/bee-js'
 import { AnyThreadComment } from '../../src/types'
@@ -32,10 +32,6 @@ function getPersonalStorageWallet(): {
     zero_,
     zero_any,
   }
-}
-
-function getTestResourceId(sequenceId: number): string {
-  return `${sequenceId}-${getRandomString()}`
 }
 
 describe('integration tests', () => {
@@ -84,7 +80,7 @@ describe('integration tests', () => {
     expect(noRecord).toBeUndefined()
   })
 
-  it('should insert a wrong record into PSR', async () => {
+  it('should skip a wrong record in PSR', async () => {
     const { zero_, zero_any } = getPersonalStorageWallet()
     const resourceId = getTestResourceId(4)
     const message1 = { contentHash, text, timestamp: 1 }
