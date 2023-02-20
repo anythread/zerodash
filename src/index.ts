@@ -1,7 +1,7 @@
 import { Bee, Reference } from '@ethersphere/bee-js'
 import { keccak256Hash, numberToFeedIndex } from './utils'
 import { getConsensualPrivateKey, getGraffitiWallet, serializeGraffitiRecord } from './graffiti-feed'
-import { AnyThreadComment, BeeJsSigner, EthAddress, GraffitiFeedRecord, Signer } from './types'
+import { AnyThreadComment, BeeJsSigner, Bytes, EthAddress, GraffitiFeedRecord, Signer } from './types'
 import {
   assertAnyThreadComment,
   assertGraffitiFeedRecord,
@@ -9,15 +9,11 @@ import {
   getAddressOfSigner,
 } from './utils'
 
-export interface Bytes<Length extends number> extends Uint8Array {
-  readonly length: Length
-}
-
 export const DEFAULT_RESOURCE_ID = 'any'
 const DEFAULT_POSTAGE_BATCH_ID = '0000000000000000000000000000000000000000000000000000000000000000'
 const DEFAULT_CONSENSUS_ID = 'AnyThread:v1'
 
-interface ConstructorOptions<T = AnyThreadComment> {
+interface BaseConstructorOptions<T = AnyThreadComment> {
   /**
    * The first update will be fetched first
    * Default: false
@@ -31,18 +27,15 @@ interface ConstructorOptions<T = AnyThreadComment> {
     id: string
     /**
      * Assertion function that throws an error if the parameter
-     * - record from user personal storage - does not satisfy
-     * the structural requirements.
+     * does not satisfy the structural requirements.
+     * record formats:
+     * - PersonalStorageSignal: record in the personal storage.
+     * - InformationSignal: record in the graffiti feed.
      * Default: assertAnyThreadComment
      * @param unknown any object for asserting
      */
-    assertPersonalStorageRecord: (unknown: unknown) => asserts unknown is T
+    assertRecord: (unknown: unknown) => asserts unknown is T
   }
-  /**
-   * User signer of the Personal Storage
-   * Omitting it does not allow writing
-   */
-  personalStorageSigner?: Signer
   /**
    * Swarm Postage Batch ID which is only required when write happens
    * Default: 000000000000000000000000000000000000000000000
@@ -53,6 +46,14 @@ interface ConstructorOptions<T = AnyThreadComment> {
    * Default: http://localhost:1633
    */
   beeApiUrl?: string
+}
+
+interface ConstructorOptions<T = AnyThreadComment> extends BaseConstructorOptions<T> {
+  /**
+   * User signer of the Personal Storage
+   * Omitting it does not allow writing
+   */
+  personalStorageSigner?: Signer
 }
 
 interface ReadOptions {
@@ -68,7 +69,12 @@ interface ReadPersonalStorageReturn<T> {
   record: T
 }
 
-interface ReadReturn<T> {
+interface InformationSignalRead<T> {
+  index: number
+  record: T
+}
+
+interface PersonalStorageSignalRead<T> {
   iaasIdentifier: EthAddress
   index: number
   iter: AsyncGenerator<ReadPersonalStorageReturn<T>>
@@ -76,7 +82,7 @@ interface ReadReturn<T> {
 
 type WriteOptions = ReadOptions
 
-export class ZeroDash<UserPayload = AnyThreadComment> {
+export class PersonalStorageSignal<UserPayload = AnyThreadComment> {
   public fifo: boolean
   public postageBatchId: string
   private bee: Bee
@@ -97,11 +103,10 @@ export class ZeroDash<UserPayload = AnyThreadComment> {
           throw new Error('No Signer has been passed.')
         },
       } as unknown as BeeJsSigner)
-    this.assertPersonalStorageRecord =
-      options?.consensus?.assertPersonalStorageRecord ?? assertAnyThreadComment
+    this.assertPersonalStorageRecord = options?.consensus?.assertRecord ?? assertAnyThreadComment
   }
 
-  async *read(options?: ReadOptions): AsyncGenerator<ReadReturn<UserPayload>> {
+  async *read(options?: ReadOptions): AsyncGenerator<PersonalStorageSignalRead<UserPayload>> {
     const resourceId = options?.resourceId ?? DEFAULT_RESOURCE_ID
     const graffitiSigner = getConsensualPrivateKey(resourceId)
     const graffitiWallet = getGraffitiWallet(graffitiSigner)
@@ -278,5 +283,102 @@ export class ZeroDash<UserPayload = AnyThreadComment> {
 
   private serializeUserPayload(userPayload: UserPayload): Uint8Array {
     return new TextEncoder().encode(JSON.stringify(userPayload))
+  }
+}
+
+export class InformationSignal<UserPayload = AnyThreadComment> {
+  public fifo: boolean
+  public postageBatchId: string
+  private bee: Bee
+  /** Graffiti Feed Topic */
+  private consensusHash: Bytes<32>
+  private assertGraffitiRecord: (unknown: unknown) => asserts unknown is UserPayload
+
+  constructor(beeApiUrl: string, options?: ConstructorOptions<UserPayload>) {
+    this.postageBatchId = options?.postageBatchId ?? DEFAULT_POSTAGE_BATCH_ID
+    this.consensusHash = keccak256Hash(options?.consensus?.id ?? DEFAULT_CONSENSUS_ID)
+    this.fifo = options?.fifo ?? false
+    this.bee = new Bee(beeApiUrl)
+    this.assertGraffitiRecord = options?.consensus?.assertRecord ?? assertGraffitiFeedRecord
+  }
+
+  async *read(options?: ReadOptions): AsyncGenerator<InformationSignalRead<UserPayload>> {
+    const resourceId = options?.resourceId ?? DEFAULT_RESOURCE_ID
+    const graffitiSigner = getConsensualPrivateKey(resourceId)
+    const graffitiWallet = getGraffitiWallet(graffitiSigner)
+    const graffitiReader = this.bee.makeFeedReader('sequence', this.consensusHash, graffitiWallet.address)
+
+    if (this.fifo) {
+      // start from the beginning and do it until there is no more
+      let i = 0
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        try {
+          const index = i
+          const recordPointer = await graffitiReader.download({ index: numberToFeedIndex(i++) })
+          try {
+            const record = await this.readGraffitiFeedRecord(recordPointer.reference)
+
+            yield {
+              record,
+              index,
+            }
+          } catch (e) {
+            // if the structure of the graffiti feed is wrong it just steps further
+            continue
+          }
+        } catch (e) {
+          break
+        }
+      }
+    } else {
+      // last record
+      try {
+        const lastRecord = await graffitiReader.download()
+        const lastIndex = feedIndexToNumber(lastRecord.feedIndex)
+        for (let i = lastIndex; i >= 0; i--) {
+          try {
+            const recordPointer = await graffitiReader.download({ index: numberToFeedIndex(i) })
+            const record = await this.readGraffitiFeedRecord(recordPointer.reference)
+
+            yield {
+              record,
+              index: i,
+            }
+          } catch (e) {
+            continue
+          }
+        }
+      } catch (e) {
+        return
+      }
+    }
+  }
+
+  async write(data: UserPayload, options?: WriteOptions) {
+    this.assertGraffitiRecord(data)
+    const resourceId = options?.resourceId ?? DEFAULT_RESOURCE_ID
+    const graffitiSigner = getConsensualPrivateKey(resourceId)
+    const graffitiWriter = this.bee.makeFeedWriter('sequence', this.consensusHash, graffitiSigner)
+
+    // write graffiti feed
+    const { reference: gfrReference } = await this.bee.uploadData(
+      this.postageBatchId,
+      serializeGraffitiRecord(data),
+    )
+    await graffitiWriter.upload(this.postageBatchId, gfrReference)
+  }
+
+  // This part could be removed and put its content to the single owner chunk body
+  private async readGraffitiFeedRecord(contentAddr: Reference): Promise<UserPayload> {
+    const data = await this.bee.downloadData(contentAddr)
+    try {
+      const json = JSON.parse(new TextDecoder().decode(data))
+      this.assertGraffitiRecord(json)
+
+      return json
+    } catch (e) {
+      throw new Error(`Could not decode Graffiti Feed Record: ${(e as Error).message}`)
+    }
   }
 }

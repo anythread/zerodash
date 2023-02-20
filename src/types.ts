@@ -6,6 +6,10 @@ export declare type FlavoredType<Type, Name> = Type & {
   __tag__?: Name
 }
 
+export interface Bytes<Length extends number> extends Uint8Array {
+  readonly length: Length
+}
+
 export type EthAddress = Utils.HexString<20>
 
 export interface GraffitiFeedRecord {

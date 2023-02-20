@@ -1,7 +1,7 @@
 import { keccak256Hash } from '../../src/utils'
 import { Wallet } from 'ethers'
-import { ZeroDash } from '../../src'
-import { beeUrl, getPostageBatchId, getRandomString } from '../utils'
+import { PersonalStorageSignal } from '../../src'
+import { beeUrl, getPostageBatchId, getTestResourceId } from '../utils'
 import { bytesToHex } from '../../src/utils'
 import { Reference } from '@ethersphere/bee-js'
 import { AnyThreadComment } from '../../src/types'
@@ -10,16 +10,20 @@ const postageBatchId = getPostageBatchId()
 const text = 'Csak a puffin ad neked erőt és mindent lebíró akaratot' // for testing
 const contentHash = bytesToHex(keccak256Hash('smth')) as Reference
 
-function getPersonalStorageWallet(): { personalStorageWallet: Wallet; zero_: ZeroDash; zero_any: ZeroDash } {
+function getPersonalStorageWallet(): {
+  personalStorageWallet: Wallet
+  zero_: PersonalStorageSignal
+  zero_any: PersonalStorageSignal
+} {
   const personalStorageWallet = Wallet.createRandom()
-  const zero_ = new ZeroDash(beeUrl(), {
+  const zero_ = new PersonalStorageSignal(beeUrl(), {
     personalStorageSigner: personalStorageWallet.privateKey.slice(2),
     postageBatchId,
   })
 
-  const zero_any = new ZeroDash(beeUrl(), {
+  const zero_any = new PersonalStorageSignal(beeUrl(), {
     personalStorageSigner: personalStorageWallet.privateKey.slice(2),
-    consensus: { id: 'AnyThread:v1', assertPersonalStorageRecord: () => true },
+    consensus: { id: 'AnyThread:v1', assertRecord: () => true },
     postageBatchId,
   })
 
@@ -28,10 +32,6 @@ function getPersonalStorageWallet(): { personalStorageWallet: Wallet; zero_: Zer
     zero_,
     zero_any,
   }
-}
-
-function getTestResourceId(sequenceId: number): string {
-  return `${sequenceId}-${getRandomString()}`
 }
 
 describe('integration tests', () => {
@@ -80,7 +80,7 @@ describe('integration tests', () => {
     expect(noRecord).toBeUndefined()
   })
 
-  it('should insert a wrong record into PSR', async () => {
+  it('should skip a wrong record in PSR', async () => {
     const { zero_, zero_any } = getPersonalStorageWallet()
     const resourceId = getTestResourceId(4)
     const message1 = { contentHash, text, timestamp: 1 }

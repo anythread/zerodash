@@ -27,3 +27,7 @@ export function getRandomString(length = 16): string {
 
   return result
 }
+
+export function getTestResourceId(sequenceId: number): string {
+  return `${sequenceId}-${getRandomString()}`
+}
