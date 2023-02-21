@@ -32,3 +32,5 @@ export interface AnyThreadComment {
     blobType: string
   }
 }
+
+export type InformationSignalRecord = string

@@ -1,7 +1,15 @@
 import { Bee, Reference } from '@ethersphere/bee-js'
-import { keccak256Hash, numberToFeedIndex } from './utils'
+import { assertInformationSignalRecord, keccak256Hash, numberToFeedIndex } from './utils'
 import { getConsensualPrivateKey, getGraffitiWallet, serializeGraffitiRecord } from './graffiti-feed'
-import { AnyThreadComment, BeeJsSigner, Bytes, EthAddress, GraffitiFeedRecord, Signer } from './types'
+import {
+  AnyThreadComment,
+  BeeJsSigner,
+  Bytes,
+  EthAddress,
+  GraffitiFeedRecord,
+  InformationSignalRecord,
+  Signer,
+} from './types'
 import {
   assertAnyThreadComment,
   assertGraffitiFeedRecord,
@@ -287,7 +295,7 @@ export class PersonalStorageSignal<UserPayload = AnyThreadComment> {
   }
 }
 
-export class InformationSignal<UserPayload = AnyThreadComment> {
+export class InformationSignal<UserPayload = InformationSignalRecord> {
   public fifo: boolean
   public postageBatchId: string
   private bee: Bee
@@ -300,7 +308,7 @@ export class InformationSignal<UserPayload = AnyThreadComment> {
     this.consensusHash = keccak256Hash(options?.consensus?.id ?? DEFAULT_CONSENSUS_ID_2)
     this.fifo = options?.fifo ?? false
     this.bee = new Bee(beeApiUrl)
-    this.assertGraffitiRecord = options?.consensus?.assertRecord ?? assertAnyThreadComment
+    this.assertGraffitiRecord = options?.consensus?.assertRecord ?? assertInformationSignalRecord
   }
 
   async *read(options?: ReadOptions): AsyncGenerator<InformationSignalRead<UserPayload>> {
