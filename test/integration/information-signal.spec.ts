@@ -1,3 +1,6 @@
+import { Utils } from '@ethersphere/bee-js'
+import { HexString } from '@ethersphere/bee-js/dist/types/utils/hex'
+import { randomBytes } from 'crypto'
 import { InformationSignal } from '../../src'
 import { beeUrl, getPostageBatchId, getTestResourceId } from '../utils'
 
@@ -44,14 +47,19 @@ function getSignalInstances(): {
 
 describe('integration tests', () => {
   it('should write/read some data into the default GF', async () => {
-    const { zero_ } = getSignalInstances()
+    const zero_ = new InformationSignal(beeUrl(), { postageBatchId })
     const resourceId = getTestResourceId(1)
+    const message = {
+      text: 'Te menj előre a te hangod mélyebb',
+      timestamp: 1676990501732,
+      contentHash: Utils.bytesToHex(randomBytes(32)) as HexString<64>,
+    }
 
-    await zero_.write(text, { resourceId })
+    await zero_.write(message, { resourceId })
 
     const record = (await zero_.read({ resourceId }).next()).value.record
 
-    expect(record).toStrictEqual(text)
+    expect(record).toStrictEqual(message)
   })
 
   it('should read on empty graffiti feed', async () => {
