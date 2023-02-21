@@ -1,6 +1,13 @@
 import { Utils } from '@ethersphere/bee-js'
 import { Wallet } from 'ethers'
-import { AnyThreadComment, BeeJsSigner, EthAddress, GraffitiFeedRecord, Signer } from './types'
+import {
+  AnyThreadComment,
+  BeeJsSigner,
+  EthAddress,
+  GraffitiFeedRecord,
+  InformationSignalRecord,
+  Signer,
+} from './types'
 export const keccak256Hash = Utils.keccak256Hash
 export const hexToBytes = Utils.hexToBytes
 
@@ -75,5 +82,15 @@ function isAnyThreadComment(value: unknown): value is AnyThreadComment {
 export function assertAnyThreadComment(value: unknown): asserts value is AnyThreadComment {
   if (!isAnyThreadComment(value)) {
     throw new Error('The given value is not a valid personal storage record')
+  }
+}
+
+function isInformationSignalRecord(value: unknown): value is InformationSignalRecord {
+  return value !== null && typeof value === 'string'
+}
+
+export function assertInformationSignalRecord(value: unknown): asserts value is InformationSignalRecord {
+  if (!isInformationSignalRecord(value)) {
+    throw new Error('Value is not a valid Graffiti Feed Record')
   }
 }

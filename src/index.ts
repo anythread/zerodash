@@ -1,7 +1,15 @@
 import { Bee, Reference } from '@ethersphere/bee-js'
-import { keccak256Hash, numberToFeedIndex } from './utils'
+import { assertInformationSignalRecord, keccak256Hash, numberToFeedIndex } from './utils'
 import { getConsensualPrivateKey, getGraffitiWallet, serializeGraffitiRecord } from './graffiti-feed'
-import { AnyThreadComment, BeeJsSigner, Bytes, EthAddress, GraffitiFeedRecord, Signer } from './types'
+import {
+  AnyThreadComment,
+  BeeJsSigner,
+  Bytes,
+  EthAddress,
+  GraffitiFeedRecord,
+  InformationSignalRecord,
+  Signer,
+} from './types'
 import {
   assertAnyThreadComment,
   assertGraffitiFeedRecord,
@@ -11,7 +19,8 @@ import {
 
 export const DEFAULT_RESOURCE_ID = 'any'
 const DEFAULT_POSTAGE_BATCH_ID = '0000000000000000000000000000000000000000000000000000000000000000'
-const DEFAULT_CONSENSUS_ID = 'AnyThread:v1'
+const DEFAULT_CONSENSUS_ID = 'AnyThread:v1' // used at personal storage signaling
+const DEFAULT_CONSENSUS_ID_2 = 'SimpleGraffitiFeed:v1' // used at information signaling
 
 interface BaseConstructorOptions<T = AnyThreadComment> {
   /**
@@ -286,7 +295,7 @@ export class PersonalStorageSignal<UserPayload = AnyThreadComment> {
   }
 }
 
-export class InformationSignal<UserPayload = AnyThreadComment> {
+export class InformationSignal<UserPayload = InformationSignalRecord> {
   public fifo: boolean
   public postageBatchId: string
   private bee: Bee
@@ -296,10 +305,10 @@ export class InformationSignal<UserPayload = AnyThreadComment> {
 
   constructor(beeApiUrl: string, options?: ConstructorOptions<UserPayload>) {
     this.postageBatchId = options?.postageBatchId ?? DEFAULT_POSTAGE_BATCH_ID
-    this.consensusHash = keccak256Hash(options?.consensus?.id ?? DEFAULT_CONSENSUS_ID)
+    this.consensusHash = keccak256Hash(options?.consensus?.id ?? DEFAULT_CONSENSUS_ID_2)
     this.fifo = options?.fifo ?? false
     this.bee = new Bee(beeApiUrl)
-    this.assertGraffitiRecord = options?.consensus?.assertRecord ?? assertGraffitiFeedRecord
+    this.assertGraffitiRecord = options?.consensus?.assertRecord ?? assertInformationSignalRecord
   }
 
   async *read(options?: ReadOptions): AsyncGenerator<InformationSignalRead<UserPayload>> {
