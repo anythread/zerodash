@@ -157,7 +157,7 @@ export class PersonalStorageSignal<UserPayload = AnyThreadComment> {
       // last record
       try {
         const lastRecord = await graffitiReader.download()
-        const lastIndex = feedIndexToNumber(lastRecord.feedIndex)
+        const lastIndex = feedIndexToNumber(lastRecord.feedIndex as string)
         for (let i = lastIndex; i >= 0; i--) {
           try {
             const record = await graffitiReader.download({ index: numberToFeedIndex(i) })
@@ -241,7 +241,7 @@ export class PersonalStorageSignal<UserPayload = AnyThreadComment> {
       // last record
       try {
         const lastRecord = await feedReader.download()
-        const lastIndex = feedIndexToNumber(lastRecord.feedIndex)
+        const lastIndex = feedIndexToNumber(lastRecord.feedIndex as string)
         for (let i = lastIndex; i >= 0; i--) {
           try {
             const record = await feedReader.download({ index: numberToFeedIndex(i) })
@@ -344,7 +344,7 @@ export class InformationSignal<UserPayload = InformationSignalRecord> {
       // last record
       try {
         const lastRecord = await graffitiReader.download()
-        const lastIndex = feedIndexToNumber(lastRecord.feedIndex)
+        const lastIndex = feedIndexToNumber(lastRecord.feedIndex as string)
         for (let i = lastIndex; i >= 0; i--) {
           try {
             const recordPointer = await graffitiReader.download({ index: numberToFeedIndex(i) })
