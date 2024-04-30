@@ -25,15 +25,17 @@ export interface SampleDappRecord {
   timestamp: number
 }
 
-export function assertRecord(value: unknown): asserts value is SampleDappRecord {
+function assertRecord(value: unknown): asserts value is SampleDappRecord {
   if (
     value !== null &&
     typeof value === 'object' &&
     Object.keys(value).includes('text') &&
     Object.keys(value).includes('timestamp')
   ) {
-    throw new Error('The given value is not a valid personal storage record')
+    return
   }
+  
+  throw new Error('The given value is not a valid personal storage record')
 }
 ```
 
