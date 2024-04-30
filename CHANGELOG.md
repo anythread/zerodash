@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/anythread/zerodash/compare/v0.2.1...v0.2.2) (2024-04-30)
+
+
+### Bug Fixes
+
+* bee js update ([#8](https://github.com/anythread/zerodash/issues/8)) ([4e15b47](https://github.com/anythread/zerodash/commit/4e15b47d650fac1df5d28a891a7baf77e6245b04))
+
 ## [0.2.1](https://github.com/anythread/zerodash/compare/v0.2.0...v0.2.1) (2023-02-21)
 
 

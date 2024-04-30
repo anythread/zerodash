@@ -1,6 +1,6 @@
 {
   "name": "zerodash",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Library for utilizing Graffiti Feed with Personal Storage - FIP 62",
   "main": "dist/index.js",
   "scripts": {
